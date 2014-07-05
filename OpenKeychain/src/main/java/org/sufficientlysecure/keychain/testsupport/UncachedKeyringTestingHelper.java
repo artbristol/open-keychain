@@ -1,5 +1,6 @@
 package org.sufficientlysecure.keychain.testsupport;
 
+import org.spongycastle.bcpg.BCPGKey;
 import org.spongycastle.bcpg.PublicKeyAlgorithmTags;
 import org.spongycastle.bcpg.PublicKeyPacket;
 import org.spongycastle.bcpg.RSAPublicBCPGKey;
@@ -18,7 +19,6 @@ import java.util.Iterator;
  * Created by art on 28/06/14.
  */
 public class UncachedKeyringTestingHelper {
-
 
     public static UncachedKeyRing ring1() {
         BigInteger modulus = BigInteger.ONE;
@@ -112,8 +112,79 @@ public class UncachedKeyringTestingHelper {
             return false;
         }
 
+        if (!keysAreEqual(key1.getPublicKey(), key2.getPublicKey())) {
+            return false;
+        }
+
         return equal;
     }
+
+    public static boolean keysAreEqual(PGPPublicKey a, PGPPublicKey b) {
+        if (a.getAlgorithm() != b.getAlgorithm()) {
+            return false;
+        }
+
+        if (a.getBitStrength() != b.getBitStrength()) {
+            return false;
+        }
+
+        if (!TestDataUtil.equals(a.getCreationTime(), b.getCreationTime())) {
+            return false;
+        }
+
+        if (!Arrays.equals(a.getFingerprint(), b.getFingerprint())) {
+            return false;
+        }
+
+        if (a.getKeyID() != b.getKeyID()) {
+            return false;
+        }
+
+        if (!pubKeyPacketsAreEqual(a.getPublicKeyPacket(), b.getPublicKeyPacket())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean pubKeyPacketsAreEqual(PublicKeyPacket a, PublicKeyPacket b) {
+
+        if (a.getAlgorithm() != b.getAlgorithm()) {
+            return false;
+        }
+
+        if (!bcpgKeysAreEqual(a.getKey(), b.getKey())) {
+            return false;
+        }
+
+        if (!TestDataUtil.equals(a.getTime(), b.getTime())) {
+            return false;
+        }
+
+        if (a.getValidDays() != b.getValidDays()) {
+            return false;
+        }
+
+        if (a.getVersion() != b.getVersion()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean bcpgKeysAreEqual(BCPGKey a, BCPGKey b) {
+
+        if (!TestDataUtil.equals(a.getFormat(), b.getFormat())) {
+            return false;
+        }
+
+        if (!Arrays.equals(a.getEncoded(), b.getEncoded())) {
+            return false;
+        }
+
+        return true;
+    }
+
 
     public void doTestCanonicalize(UncachedKeyRing inputKeyRing, UncachedKeyRing expectedKeyRing) {
         if (!compareRing(inputKeyRing, expectedKeyRing)) {
