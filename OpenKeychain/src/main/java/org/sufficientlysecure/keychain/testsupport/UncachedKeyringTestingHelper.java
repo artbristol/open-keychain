@@ -74,6 +74,7 @@ public class UncachedKeyringTestingHelper {
             return false;
         }
 
+        // Ooops, getPublicKey is due to disappear. But then how to compare?
         if (!keysAreEqual(key1.getPublicKey(), key2.getPublicKey())) {
             return false;
         }

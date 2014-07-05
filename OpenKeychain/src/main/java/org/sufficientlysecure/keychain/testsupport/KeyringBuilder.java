@@ -4,6 +4,7 @@ import org.spongycastle.bcpg.PublicKeyAlgorithmTags;
 import org.spongycastle.bcpg.PublicKeyPacket;
 import org.spongycastle.bcpg.RSAPublicBCPGKey;
 import org.spongycastle.bcpg.UserIDPacket;
+import org.spongycastle.openpgp.PGPException;
 import org.spongycastle.openpgp.PGPPublicKey;
 import org.spongycastle.openpgp.PGPPublicKeyRing;
 import org.spongycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
@@ -41,26 +42,35 @@ public class KeyringBuilder {
     private static final BigInteger exponent = new BigInteger("010001", 16);
 
     public static UncachedKeyRing ring1() {
-        return ringForModulus(modulus, new Date(), "user1@example.com");
+        return ringForModulus(new Date(), "user1@example.com");
     }
 
     public static UncachedKeyRing ring2() {
-        return ringForModulus(modulus, new Date(), "user1@example.com");
+        return ringForModulus(new Date(), "user1@example.com");
     }
 
-    private static UncachedKeyRing ringForModulus(BigInteger modulus, Date date, String userId) {
+    private static UncachedKeyRing ringForModulus(Date date, String userIdString) {
 
         try {
-            PublicKeyPacket publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.RSA_SIGN, date, new RSAPublicBCPGKey(modulus, exponent));
-            PGPPublicKey publicKey = new PGPPublicKey(
-                    publicKeyPacket, new BcKeyFingerprintCalculator());
+            PGPPublicKey publicKey = createPgpPublicKey(modulus, date);
+            UserIDPacket userId = createUserId(userIdString);
 
-            PGPPublicKeyRing pgpPublicKeyRing2 = new PGPPublicKeyRing(
-                    TestDataUtil.concatAll(publicKey.getEncoded(), createUserId(userId).getEncoded()), new BcKeyFingerprintCalculator());
-            return UncachedKeyRing.decodeFromData(pgpPublicKeyRing2.getEncoded());
+            byte[] encodedRing = TestDataUtil.concatAll(publicKey.getEncoded(), userId.getEncoded());
+
+            PGPPublicKeyRing pgpPublicKeyRing = new PGPPublicKeyRing(
+                    encodedRing, new BcKeyFingerprintCalculator());
+
+            return UncachedKeyRing.decodeFromData(pgpPublicKeyRing.getEncoded());
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static PGPPublicKey createPgpPublicKey(BigInteger modulus, Date date) throws PGPException {
+        PublicKeyPacket publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.RSA_SIGN, date, new RSAPublicBCPGKey(modulus, exponent));
+        return new PGPPublicKey(
+                publicKeyPacket, new BcKeyFingerprintCalculator());
     }
 
     private static UserIDPacket createUserId(String userId) {
