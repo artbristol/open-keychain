@@ -4,8 +4,11 @@ import org.spongycastle.bcpg.BCPGKey;
 import org.spongycastle.bcpg.PublicKeyAlgorithmTags;
 import org.spongycastle.bcpg.PublicKeyPacket;
 import org.spongycastle.bcpg.RSAPublicBCPGKey;
+import org.spongycastle.openpgp.PGPException;
 import org.spongycastle.openpgp.PGPPublicKey;
 import org.spongycastle.openpgp.PGPPublicKeyRing;
+import org.spongycastle.openpgp.PGPSignature;
+import org.spongycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.spongycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.sufficientlysecure.keychain.pgp.UncachedKeyRing;
 import org.sufficientlysecure.keychain.pgp.UncachedPublicKey;
@@ -13,7 +16,6 @@ import org.sufficientlysecure.keychain.pgp.UncachedPublicKey;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 
 /**
  * Created by art on 28/06/14.
@@ -44,32 +46,13 @@ public class UncachedKeyringTestingHelper {
     }
 
     public static boolean compareRing(UncachedKeyRing keyRing1, UncachedKeyRing keyRing2) {
-        boolean equal = true;
-
-        Iterator<UncachedPublicKey> publicKeys1 = keyRing1.getPublicKeys();
-        Iterator<UncachedPublicKey> publicKeys2 = keyRing2.getPublicKeys();
-
-        int keys1Count = 0;
-        int keys2Count = 0;
-
-        while (publicKeys1.hasNext()) {
-            UncachedPublicKey key1 = publicKeys1.next();
-            keys1Count++;
-            if (!publicKeys2.hasNext()) {
-                return false;
-            }
-            UncachedPublicKey key2 = publicKeys2.next();
-            keys2Count++;
-            if (!comparePublicKey(key1, key2)) {
-                return false;
-            }
-        }
-
-        if (publicKeys2.hasNext()) {
-            return false;
-        }
-
-        return equal;
+        return TestDataUtil.iterEquals(keyRing1.getPublicKeys(), keyRing2.getPublicKeys(), new
+                TestDataUtil.EqualityChecker<UncachedPublicKey>() {
+                    @Override
+                    public boolean areEquals(UncachedPublicKey lhs, UncachedPublicKey rhs) {
+                        return comparePublicKey(lhs, rhs);
+                    }
+                });
     }
 
     public static boolean comparePublicKey(UncachedPublicKey key1, UncachedPublicKey key2) {
@@ -120,6 +103,7 @@ public class UncachedKeyringTestingHelper {
     }
 
     public static boolean keysAreEqual(PGPPublicKey a, PGPPublicKey b) {
+
         if (a.getAlgorithm() != b.getAlgorithm()) {
             return false;
         }
@@ -141,6 +125,92 @@ public class UncachedKeyringTestingHelper {
         }
 
         if (!pubKeyPacketsAreEqual(a.getPublicKeyPacket(), b.getPublicKeyPacket())) {
+            return false;
+        }
+
+        if (a.getVersion() != b.getVersion()) {
+            return false;
+        }
+
+        if (a.getValidDays() != b.getValidDays()) {
+            return false;
+        }
+
+        if (a.getValidSeconds() != b.getValidSeconds()) {
+            return false;
+        }
+
+        if (!Arrays.equals(a.getTrustData(), b.getTrustData())) {
+            return false;
+        }
+
+        if (!TestDataUtil.iterEquals(a.getUserIDs(), b.getUserIDs())) {
+            return false;
+        }
+
+        if (!TestDataUtil.iterEquals(a.getUserAttributes(), b.getUserAttributes(),
+                new TestDataUtil.EqualityChecker<PGPUserAttributeSubpacketVector>() {
+                    public boolean areEquals(PGPUserAttributeSubpacketVector lhs, PGPUserAttributeSubpacketVector rhs) {
+                        // For once, BC defines equals, so we use it implicitly.
+                        return TestDataUtil.equals(lhs, rhs);
+                    }
+                }
+        )) {
+            return false;
+        }
+
+
+        if (!TestDataUtil.iterEquals(a.getSignatures(), b.getSignatures(),
+                new TestDataUtil.EqualityChecker<PGPSignature>() {
+                    public boolean areEquals(PGPSignature lhs, PGPSignature rhs) {
+                        return signaturesAreEqual(lhs, rhs);
+                    }
+                }
+        )) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean signaturesAreEqual(PGPSignature a, PGPSignature b) {
+
+//        public PGPSignatureSubpacketVector getHashedSubPackets()
+//        public PGPSignatureSubpacketVector getUnhashedSubPackets()
+
+        if (a.getVersion() != b.getVersion()) {
+            return false;
+        }
+
+        if (a.getKeyAlgorithm() != b.getKeyAlgorithm()) {
+            return false;
+        }
+
+        if (a.getHashAlgorithm() != b.getHashAlgorithm()) {
+            return false;
+        }
+
+        if (a.getSignatureType() != b.getSignatureType()) {
+            return false;
+        }
+
+        try {
+            if (!Arrays.equals(a.getSignature(), b.getSignature())) {
+                return false;
+            }
+        } catch (PGPException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        if (a.getKeyID() != b.getKeyID()) {
+            return false;
+        }
+
+        if (!TestDataUtil.equals(a.getCreationTime(), b.getCreationTime())) {
+            return false;
+        }
+
+        if (!Arrays.equals(a.getSignatureTrailer(), b.getSignatureTrailer())) {
             return false;
         }
 
