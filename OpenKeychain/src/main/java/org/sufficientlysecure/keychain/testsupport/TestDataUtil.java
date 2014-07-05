@@ -56,7 +56,7 @@ public class TestDataUtil {
                 return false;
             }
             T bObject = b.next();
-            if (!comparator.areEquals(aObject, bObject) ) {
+            if (!comparator.areEquals(aObject, bObject)) {
                 return false;
             }
         }
@@ -80,6 +80,29 @@ public class TestDataUtil {
 
     public static interface EqualityChecker<T> {
         public boolean areEquals(T lhs, T rhs);
+    }
+
+    public static byte[] concatAll(byte[]... byteArrays) {
+        if (byteArrays.length == 1) {
+            return byteArrays[0];
+        } else if (byteArrays.length == 2) {
+            return concat(byteArrays[0], byteArrays[1]);
+        } else {
+            byte[] first = concat(byteArrays[0], byteArrays[1]);
+            byte[][] remainingArrays = new byte[byteArrays.length - 1][];
+            remainingArrays[0] = first;
+            System.arraycopy(byteArrays, 2, remainingArrays, 1, byteArrays.length - 2);
+            return concatAll(remainingArrays);
+        }
+    }
+
+    private static byte[] concat(byte[] a, byte[] b) {
+        int aLen = a.length;
+        int bLen = b.length;
+        byte[] c = new byte[aLen + bLen];
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+        return c;
     }
 
 }

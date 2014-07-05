@@ -3,13 +3,13 @@ package org.sufficientlysecure.keychain.testsupport;
 import org.spongycastle.bcpg.PublicKeyAlgorithmTags;
 import org.spongycastle.bcpg.PublicKeyPacket;
 import org.spongycastle.bcpg.RSAPublicBCPGKey;
+import org.spongycastle.bcpg.UserIDPacket;
 import org.spongycastle.openpgp.PGPPublicKey;
 import org.spongycastle.openpgp.PGPPublicKeyRing;
 import org.spongycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.sufficientlysecure.keychain.pgp.UncachedKeyRing;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -41,24 +41,30 @@ public class KeyringBuilder {
     private static final BigInteger exponent = new BigInteger("010001", 16);
 
     public static UncachedKeyRing ring1() {
-        return ringForModulus(modulus, new Date());
+        return ringForModulus(modulus, new Date(), "user1@example.com");
     }
 
     public static UncachedKeyRing ring2() {
-        return ringForModulus(modulus, new Date());
+        return ringForModulus(modulus, new Date(), "user1@example.com");
     }
 
-    private static UncachedKeyRing ringForModulus(BigInteger modulus, Date date) {
+    private static UncachedKeyRing ringForModulus(BigInteger modulus, Date date, String userId) {
 
         try {
             PublicKeyPacket publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.RSA_SIGN, date, new RSAPublicBCPGKey(modulus, exponent));
             PGPPublicKey publicKey = new PGPPublicKey(
                     publicKeyPacket, new BcKeyFingerprintCalculator());
-            PGPPublicKeyRing pgpPublicKeyRing2 = new PGPPublicKeyRing(Arrays.asList(publicKey));
+
+            PGPPublicKeyRing pgpPublicKeyRing2 = new PGPPublicKeyRing(
+                    TestDataUtil.concatAll(publicKey.getEncoded(), createUserId(userId).getEncoded()), new BcKeyFingerprintCalculator());
             return UncachedKeyRing.decodeFromData(pgpPublicKeyRing2.getEncoded());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static UserIDPacket createUserId(String userId) {
+        return new UserIDPacket(userId);
     }
 
 }
