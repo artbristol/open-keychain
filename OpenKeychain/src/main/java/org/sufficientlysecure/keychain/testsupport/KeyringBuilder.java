@@ -25,7 +25,6 @@ import org.spongycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.sufficientlysecure.keychain.pgp.UncachedKeyRing;
 
 import java.math.BigInteger;
-import java.text.DateFormat;
 import java.util.Date;
 
 /**
@@ -57,11 +56,11 @@ public class KeyringBuilder {
     private static final BigInteger exponent = new BigInteger("010001", 16);
 
     public static UncachedKeyRing ring1() {
-        return ringForModulus(new Date(0), "user1@example.com");
+        return ringForModulus(new Date(1404566755), "user1@example.com");
     }
 
     public static UncachedKeyRing ring2() {
-        return ringForModulus(new Date(0), "user1@example.com");
+        return ringForModulus(new Date(1404566755), "user1@example.com");
     }
 
     private static UncachedKeyRing ringForModulus(Date date, String userIdString) {
@@ -77,7 +76,8 @@ public class KeyringBuilder {
             byte[] encodedRing = TestDataUtil.concatAll(
                     publicKeyEncoded,
                     userIdEncoded,
-                    signaturePacketEncoded);
+                    signaturePacketEncoded
+            );
 
             PGPPublicKeyRing pgpPublicKeyRing = new PGPPublicKeyRing(
                     encodedRing, new BcKeyFingerprintCalculator());
@@ -98,39 +98,53 @@ public class KeyringBuilder {
         SignatureSubpacket[] hashedData = new SignatureSubpacket[]{
                 new SignatureCreationTime(true, date),
                 new KeyFlags(true, KeyFlags.SIGN_DATA & KeyFlags.CERTIFY_OTHER),
-                new SignatureExpirationTime(true, date.getTime()),
-                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, true,
-                        new int[]{SymmetricKeyAlgorithmTags.AES_256,
-                                SymmetricKeyAlgorithmTags.AES_192, SymmetricKeyAlgorithmTags.AES_128,
-                                SymmetricKeyAlgorithmTags.CAST5, SymmetricKeyAlgorithmTags.TRIPLE_DES}
-                ),
-                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_HASH_ALGS, true,
-                        new int[]{
-                                HashAlgorithmTags.SHA256,
-                                HashAlgorithmTags.SHA1,
-                                HashAlgorithmTags.SHA384,
-                                HashAlgorithmTags.SHA512,
-                                HashAlgorithmTags.SHA224
-
-                        }
-                ),
-                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_COMP_ALGS, true,
-                        new int[]{
-                                CompressionAlgorithmTags.ZLIB,
-                                CompressionAlgorithmTags.BZIP2,
-                                CompressionAlgorithmTags.ZLIB
-                        }
-                ),
+                new SignatureExpirationTime(true, date.getTime() + 24 * 60 * 60 * 2),
+                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, true, new int[]{
+                        SymmetricKeyAlgorithmTags.AES_256,
+                        SymmetricKeyAlgorithmTags.AES_192,
+                        SymmetricKeyAlgorithmTags.AES_128,
+                        SymmetricKeyAlgorithmTags.CAST5,
+                        SymmetricKeyAlgorithmTags.TRIPLE_DES
+                }),
+                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_HASH_ALGS, true, new int[]{
+                        HashAlgorithmTags.SHA256,
+                        HashAlgorithmTags.SHA1,
+                        HashAlgorithmTags.SHA384,
+                        HashAlgorithmTags.SHA512,
+                        HashAlgorithmTags.SHA224
+                }),
+                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_COMP_ALGS, true, new int[]{
+                        CompressionAlgorithmTags.ZLIB,
+                        CompressionAlgorithmTags.BZIP2,
+                        CompressionAlgorithmTags.ZLIB
+                }),
                 new Features(false, Features.FEATURE_MODIFICATION_DETECTION),
                 // can't do keyserver prefs
-
-
         };
         SignatureSubpacket[] unhashedData = new SignatureSubpacket[]{
                 new IssuerKeyID(true, new BigInteger("15130BCF071AE6BF", 16).toByteArray())
         };
         byte[] fingerPrint = new BigInteger("522c", 16).toByteArray();
-        MPInteger[] signature = new MPInteger[]{};
+        MPInteger[] signature = new MPInteger[]{
+                new MPInteger(new BigInteger(
+                        "b065c071d3439d5610eb22e5b4df9e42" +
+                                "ed78b8c94f487389e4fc98e8a75a043f" +
+                                "14bf57d591811e8e7db2d31967022d2e" +
+                                "e64372829183ec51d0e20c42d7a1e519" +
+                                "e9fa22cd9db90f0fd7094fd093b78be2" +
+                                "c0db62022193517404d749152c71edc6" +
+                                "fd48af3416038d8842608ecddebbb11c" +
+                                "5823a4321d2029b8993cb017fa8e5ad7" +
+                                "8a9a618672d0217c4b34002f1a4a7625" +
+                                "a514b6a86475e573cb87c64d7069658e" +
+                                "627f2617874007a28d525e0f87d93ca7" +
+                                "b15ad10dbdf10251e542afb8f9b16cbf" +
+                                "7bebdb5fe7e867325a44e59cad0991cb" +
+                                "239b1c859882e2ebb041b80e5cdc3b40" +
+                                "ed259a8a27d63869754c0881ccdcb50f" +
+                                "0564fecdc6966be4a4b87a3507a9d9be", 16
+                ))
+        };
         return new SignaturePacket(signatureType,
                 keyID,
                 keyAlgorithm,
